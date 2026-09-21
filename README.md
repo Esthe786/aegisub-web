@@ -30,7 +30,9 @@ far more CPU than most NAS boxes, so **pulling the finished image is the
 recommended path** instead of compiling Aegisub on the NAS itself:
 
 ```bash
-cd /volume1/DockerV/aegisub   # wherever you copy this project's files to
+cd /volume1/DockerV
+git clone https://github.com/Esthe786/aegisub-web.git aegisub
+cd aegisub
 cp .env.example .env
 # edit .env: set PASSWORD (and CUSTOM_USER if you want something other than
 # "admin") to a real value - this file is gitignored/dockerignored, so the
@@ -135,10 +137,12 @@ That's now split in two:
   needs `docker compose build` again. Same for `root/defaults/autostart`,
   since it's only ever copied into `/config` once, on the very first boot.
 
-One thing to check on the NAS before relying on the bind-mounted script:
-`chmod +x root/custom-cont-init.d/10-lock-aegisub-auth.sh` - bind mounts
-carry over the host file's permission bits exactly, and the base image
-silently skips non-executable init scripts.
+Bind mounts carry over the host file's permission bits exactly, and the
+base image silently skips non-executable init scripts - the executable bit
+on `10-lock-aegisub-auth.sh` is tracked in git (`git clone` on the NAS
+preserves it), but if you copy the files over by some other means (SMB,
+zip, etc.) instead of cloning, double-check with `ls -l` and
+`chmod +x root/custom-cont-init.d/10-lock-aegisub-auth.sh` if needed.
 
 ## Using it
 
