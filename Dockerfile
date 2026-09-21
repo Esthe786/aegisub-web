@@ -61,11 +61,13 @@ WORKDIR /usr/src/Aegisub-3.4.2
 # directly in the format that script itself would generate for tag v3.4.2.
 RUN printf '#define BUILD_GIT_VERSION_NUMBER 6962\n#define BUILD_GIT_VERSION_STRING "3.4.2"\n#define TAGGED_RELEASE 1\n#define INSTALLER_VERSION "3.4.2"\n#define RESOURCE_BASE_VERSION 3, 4, 2\n' > git_version.h
 
-# - `meson compile -C build aegisub` (not a bare `meson compile`, which
-#   builds meson's implicit "all" set) - meson.build unconditionally runs
-#   `subdir('tests')`, which links a ~30-file gtest suite against
-#   libaegisub. It's never run in this image, so building only the
-#   `aegisub` target skips compiling and linking it entirely. `meson
+# - `meson compile -C build ./aegisub:executable` (not a bare `meson
+#   compile`, which builds meson's implicit "all" set) - meson.build
+#   unconditionally runs `subdir('tests')`, which links a ~30-file gtest
+#   suite against libaegisub. It's never run in this image, so building
+#   only this target skips compiling and linking it entirely. The
+#   `:executable` suffix disambiguates from libaegisub's own static
+#   library target, which is also (confusingly) named `aegisub`. `meson
 #   install` afterwards only needs targets that are actually marked
 #   install: true, which the test binary isn't, so this doesn't skip
 #   anything that ends up in the image.
@@ -78,7 +80,7 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
       --buildtype=release \
       -Ddefault_audio_output=PulseAudio \
       -Denable_update_checker=false && \
-    meson compile -C build aegisub && \
+    meson compile -C build ./aegisub:executable && \
     DESTDIR=/build/install meson install -C build
 
 # Stage 2: runtime desktop image
