@@ -1,0 +1,50 @@
+services:
+  aegisub:
+    build: .
+    image: ghcr.io/esthe786/aegisub-web:latest
+    container_name: aegisub
+    environment:
+      - PUID=1026
+      - PGID=100
+      - TZ=Asia/Bangkok
+      - TITLE=Aegisub
+      # First run only: sets the web login, then gets locked in appdata
+      # (/config/.htpasswd + /config/.aegisub_auth_initialized). Changing
+      # these afterwards has no effect - see README.md to reset.
+      # Values come from .env (copy .env.example -> .env and edit it) so the
+      # real password never lives in this file.
+      - CUSTOM_USER=${CUSTOM_USER:-admin}
+      - PASSWORD=${PASSWORD:-changeme_on_first_run}
+      # Optional hardening: auto-restart Aegisub if the window is closed.
+      # - RESTART_APP=true
+      #
+      # Selkies streaming tuning - no GPU is passed through, so encoding runs
+      # on the NAS's CPU (software x264). These favor smooth motion (video
+      # playback while editing, esp. over an iPad on Safari/WebCodecs) over
+      # max sharpness, since the CPU is the real bottleneck, not the client:
+      # - x264enc-striped = lower-latency variant of the default encoder
+      # - Cap the render resolution well below a Retina iPad's native res -
+      #   fewer pixels per frame is the single biggest relief on a software
+      #   encoder. Raise if text looks too soft; drop further if still choppy.
+      # - Narrower framerate/CRF ranges avoid the encoder swinging between
+      #   quality and speed mid-session, which reads as extra judder.
+      - SELKIES_ENCODER=x264enc-striped
+      - SELKIES_FRAMERATE=24-60
+      - SELKIES_H264_CRF=25-35
+      - SELKIES_MANUAL_WIDTH=1920
+      - SELKIES_MANUAL_HEIGHT=1080
+    volumes:
+      - /volume1/DockerV/aegisub/appdata:/config
+      - /volume1/DockerV/aegisub/media:/config/Projects
+      # Live-mounted so edits to these two take effect on a plain restart
+      # (`docker compose up -d`, no rebuild). They're read fresh on every
+      # container boot (custom-cont-init.d scripts run every start; nginx
+      # regenerates its vhost from default.conf every start). Anything else
+      # - the Aegisub binary itself, other Dockerfile changes - is baked
+      # into the image at build time and DOES need `docker compose build`.
+      - ./root/custom-cont-init.d/10-lock-aegisub-auth.sh:/custom-cont-init.d/10-lock-aegisub-auth.sh:ro
+      - ./root/defaults/default.conf:/defaults/default.conf:ro
+    ports:
+      - "3011:3000"   # http (plain, e.g. for a reverse proxy in front)
+      - "3012:3001"   # https (self-signed cert, use this one directly)
+    restart: unless-stopped

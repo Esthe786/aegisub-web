@@ -1,0 +1,4 @@
+.env
+# Redundant duplicate of Aegisub-3.4.2.tar.gz (same source, different
+# archive format) - the .tar.gz is what the Dockerfile/CI actually use.
+Aegisub-3.4.2.zip

@@ -1,0 +1,6 @@
+Aegisub-3.4.2.zip
+*.md
+docker-compose.yml
+.git
+.env
+.env.example

@@ -1,0 +1,2 @@
+export GTK_THEME="${GTK_THEME:-Arc-Dark}"
+aegisub &
