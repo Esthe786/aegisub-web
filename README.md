@@ -41,13 +41,13 @@ docker compose up -d
 
 `docker compose pull` needs `image:` in `docker-compose.yml` to resolve -
 it already points at the GHCR image, so no extra config is needed. The repo
-is public and so is the package, so the NAS needs no registry login.
-
-**One-time step after the very first CI run**: new GHCR packages are
-created private by default and GitHub gives no API to flip that on push -
-go to the package page on GitHub -> Settings -> Danger Zone -> Change
-visibility -> Public, once. After that every future push updates the same
-public package automatically.
+is public, and (confirmed after the first real CI run - GitHub's own docs
+say new packages default to private with no way to flip that via push, but
+in practice it came up public immediately, inheriting the repo's
+visibility) so is the package - the NAS needs no registry login to pull.
+If a future push ever produces a private package instead, the fix is the
+package page on GitHub -> Settings -> Danger Zone -> Change visibility ->
+Public, once.
 
 If you'd rather build locally instead of pulling (e.g. testing an
 uncommitted Dockerfile change), `build: .` is still in the compose file:
