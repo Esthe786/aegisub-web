@@ -51,14 +51,18 @@ If a future push ever produces a private package instead, the fix is the
 package page on GitHub -> Settings -> Danger Zone -> Change visibility ->
 Public, once.
 
-If you'd rather build locally instead of pulling (e.g. testing an
-uncommitted Dockerfile change), `build: .` is still in the compose file:
+`docker-compose.yml` only has `image:`, not `build: .`, so `docker compose
+up`/`pull` always pulls the GHCR image and never compiles anything locally.
+
+If you'd rather build locally instead (e.g. testing an uncommitted
+Dockerfile change), build and tag the image yourself, then run compose as
+usual - it'll use the locally tagged image instead of pulling:
 ```bash
-docker compose build
+docker build -t ghcr.io/esthe786/aegisub-web:latest .
 docker compose up -d
 ```
-This still compiles Aegisub from source on whatever machine runs it, so
-expect it to take a while on NAS-grade CPU. The build itself avoids doing
+This compiles Aegisub from source on whatever machine runs it, so expect
+it to take a while on NAS-grade CPU. The build itself avoids doing
 unnecessary work on top of that CPU ceiling:
 - Boost is installed as just the 5 components Aegisub's `meson.build`
   actually asks for (`chrono`/`thread`/`locale`/`regex`/`system`), not the
@@ -74,7 +78,7 @@ unnecessary work on top of that CPU ceiling:
   actually changed get recompiled next time, instead of a full rebuild.
 
 None of this changes anything at runtime - same Aegisub binary either way.
-Local `docker compose build --no-cache`/`--pull` defeats both Docker's and
+Local `docker build --no-cache`/`--pull` defeats both Docker's and
 ccache's caching, same as always.
 
 ## First login
@@ -123,8 +127,8 @@ paths are:
 
 Everything else that defines the image (the `Dockerfile`, and - until now -
 `root/custom-cont-init.d/10-lock-aegisub-auth.sh` and
-`root/defaults/default.conf`) got baked in at `docker compose build` time via
-`COPY`, so editing those files on disk did nothing until you rebuilt.
+`root/defaults/default.conf`) got baked in at image build time via `COPY`,
+so editing those files on disk did nothing until you rebuilt.
 
 That's now split in two:
 - **`10-lock-aegisub-auth.sh` and `default.conf` are live bind-mounted**
@@ -134,8 +138,10 @@ That's now split in two:
 - **Everything else still needs a rebuild.** In particular the Aegisub
   binary itself is compiled C++ baked into the image at build time - there
   is no way to hot-reload that; any Aegisub source or `Dockerfile` change
-  needs `docker compose build` again. Same for `root/defaults/autostart`,
-  since it's only ever copied into `/config` once, on the very first boot.
+  needs `docker build -t ghcr.io/esthe786/aegisub-web:latest .` again (or
+  just push to `main` and let CI rebuild it). Same for
+  `root/defaults/autostart`, since it's only ever copied into `/config`
+  once, on the very first boot.
 
 Bind mounts carry over the host file's permission bits exactly, and the
 base image silently skips non-executable init scripts - the executable bit

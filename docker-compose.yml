@@ -1,6 +1,5 @@
 services:
   aegisub:
-    build: .
     image: ghcr.io/esthe786/aegisub-web:latest
     container_name: aegisub
     environment:
@@ -41,7 +40,8 @@ services:
       # container boot (custom-cont-init.d scripts run every start; nginx
       # regenerates its vhost from default.conf every start). Anything else
       # - the Aegisub binary itself, other Dockerfile changes - is baked
-      # into the image at build time and DOES need `docker compose build`.
+      # into the image at build time; rebuild with `docker build` (or push
+      # to main and let CI rebuild), then `docker compose up -d` again.
       - ./root/custom-cont-init.d/10-lock-aegisub-auth.sh:/custom-cont-init.d/10-lock-aegisub-auth.sh:ro
       - ./root/defaults/default.conf:/defaults/default.conf:ro
     ports:
